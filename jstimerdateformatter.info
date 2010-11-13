@@ -1,0 +1,7 @@
+; $Id$
+name = JavaScript Timer Date Formatter
+description = A CCK Field Formatter for date fields using the JavaScript Countdown Timer.
+core = 6.x
+package = Date/Time
+dependencies[] = date
+dependencies[] = jstimer

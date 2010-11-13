@@ -1,0 +1,61 @@
+<?php
+// $Id$
+
+/**
+ * Implementation of hook_field_formatter_info().
+ */
+function jstimerdateformatter_field_formatter_info() {
+  return array(
+    'jstimer' => array('label' => t('JavaScript Countdown Timer'),
+      'field types' => array('date', 'datestamp', 'datetime'),
+      'multiple values' => CONTENT_HANDLE_CORE)
+  );
+}
+
+/**
+* Implementation of hook_theme().
+*/
+function jstimerdateformatter_theme($existing, $type, $theme, $path) {
+  return array(
+    'jstimerdateformatter_formatter_jstimer' => array(
+      'arguments' => array('element' => NULL)
+    )
+  );
+}
+
+/**
+* Theme function for myFormatter from hook_field_formatter_info.
+* @param $element
+*   an array of formatter info and the item to theme. look in $element['#item'] for the field item to theme.
+*/
+function theme_jstimerdateformatter_formatter_jstimer($element) {
+  $node = $element["#node"];
+  $context = !empty($node->content) && !empty($node->content[$field_name])
+     ? $node->content[$field_name]['#context']
+     : 'full';
+  // Get the formatter settings, either the default settings for this node
+  // type or the View settings stored in $node->date_info.
+  $options = date_formatter_get_settings($element["#field_name"], $element['#type_name'], $context);
+  if (!empty($node->date_info) && !empty($node->date_info->formatter_settings)) {
+    $options = $node->date_info->formatter_settings;
+  }
+  $dtfromto = date_formatter_process(array(
+    "#formatter" => "default",
+    "#item" => $element["#item"],
+    "#field_name" => $element["#field_name"],
+    "#node" => $node));
+  $dttime = $dtfromto[$options["fromto"]["fromto"] == "value2" ? "value2" : "value"];
+  $dto = $dttime["local"]["object"];
+  if ($node->date_info && $node->date_info->date_handler_fields) {
+    $dhf = $node->date_info->date_handler_fields[$element["#field_name"]];
+    if ($dhf && $dhf['view_field'] && $dhf['view_field']->content_field) {
+      $granularity = $dhf['view_field']->content_field['granularity'];
+      if ($granularity && (!isset($granularity["hour"]))) {
+        // Set the time to 23:59 if the field does not include a time
+        $dto->setTime(23, 59, 59);
+      }
+    }
+  }
+  return theme('jstimer', 'jst_timer', array('datetime' => $dto->format("c")));
+}
+
